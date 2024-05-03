@@ -58,6 +58,17 @@ aws rds describe-db-engine-versions --engine aurora-mysql --query 'DBEngineVersi
 
 AWS Secrets Managerからシークレットを取得するコマンド
 
-```
+```bash
 aws secretsmanager get-secret-value --secret-id '{シークレットIDまたはシークレット名}'
 ```
+
+RDS Proxyの状態を確認するコマンド
+
+```bash
+aws rds describe-db-proxy-targets --db-proxy-name {プロキシ識別子}
+```
+
+`"Description": "DBProxy Target is waiting for proxy to scale to desired capacity"`の場合は、プロキシのスケーリングが完了していません。
+この状態を抜けないと成否は不明です。
+1時間程度かかることがあります。
+
