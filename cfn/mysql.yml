@@ -127,7 +127,7 @@ Resources:
     Properties:
       SecretId: !Ref RDSDBSecret
       TargetId: !Ref RDSDBInstance
-      TargetType: AWS::RDS::DBCluster
+      TargetType: AWS::RDS::DBInstance
 
   #----------------------------------------
   # IAM Role for RDS Proxy
