@@ -1,0 +1,146 @@
+Description:
+  EC2 for external monitoring
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - 
+        Label:
+          default: Common parameters
+        Parameters:
+          - ServiceName
+          - StageName
+      - Label:
+          default: Parameters for EC2
+        Parameters:
+          - Ec2InstanceType
+          - KeyPairName
+          - VolumeSize
+          - Ec2ImageId
+
+Parameters:
+  ServiceName:
+    Description: ServiceName name
+    Type: String
+    Default: "external-monitoring"
+
+  StageName:
+    Description: Stage name
+    Type: String
+    Default: "loc"
+    AllowedValues:
+      - loc
+      - dev
+      - stg
+      - prod
+
+  Ec2InstanceType:
+    Description: WebServer EC2 instance type
+    Type: String
+    Default: t4g.medium
+    AllowedValues:
+      - t4g.small
+      - t4g.medium
+      - t4g.large
+    ConstraintDescription: must be a valid EC2 instance type.
+    AllowedPattern: ".+"
+
+  KeyPairName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
+    Type: AWS::EC2::KeyPair::KeyName
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+    AllowedPattern: ".+"
+
+  VolumeSize:
+    Type: Number
+    Description: Root volume size in GB
+    Default: "50"
+    MinValue: "1"
+    MaxValue: "1000"
+    ConstraintDescription: must be between 1 and 1000 GB.
+
+  Ec2ImageId:
+    Description: AMI ID of the EC2 instance
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-arm64-gp2
+    AllowedPattern: ".+"
+
+Resources:
+  # ------------------------------------------------------------#
+  #  IAM Role for EC2
+  # ------------------------------------------------------------#
+  TeminalRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ServiceName}-${StageName}-terminal-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: !Sub "${ServiceName}-${StageName}-terminal-policy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - rds:DescribeDBProxyTargets
+                  - secretsmanager:GetSecretValue
+                Resource: "*"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+      Tags: 
+        - Key: Name
+          Value: !Sub "${ServiceName}-${StageName}-terminal-role"
+        - Key: ServiceName
+          Value: !Ref ServiceName
+        - Key: StageName
+          Value: !Ref StageName
+
+  # ------------------------------------------------------------#
+  #  IAM Instance Profile for EC2
+  # ------------------------------------------------------------#
+  TerminalProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - !Ref TeminalRole
+      InstanceProfileName: !Sub ${ServiceName}-${StageName}-terminal-profile
+
+  # ------------------------------------------------------------#
+  #  EC2
+  # ------------------------------------------------------------#
+  Terminal:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref Ec2InstanceType
+      SubnetId: 
+        Fn::ImportValue:
+          !Sub "${ServiceName}-${StageName}-subnet-public-1"
+      ImageId: !Ref Ec2ImageId
+      SecurityGroupIds:
+        - Fn::ImportValue:
+            !Sub "${ServiceName}-${StageName}-sg-container"
+      IamInstanceProfile: !Ref TerminalProfile
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: !Ref VolumeSize
+            VolumeType: gp3
+      EbsOptimized: false
+      SourceDestCheck: false
+      KeyName: !Ref KeyPairName
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${StageName}-ec2-terminal
+        - Key: ServiceName
+          Value: !Ref ServiceName
+        - Key: StageName
+          Value: !Ref StageName

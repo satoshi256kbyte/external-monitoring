@@ -1,0 +1,218 @@
+Description:
+  Amazon Aurora Serverless V2 for external monitoring
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - 
+        Label:
+          default: Common parameters
+        Parameters:
+          - ServiceName
+          - StageName
+      -
+        Label:
+          default: Database parameters
+        Parameters:
+          - EngineVersion
+          - MinCapacity
+          - MaxCapacity
+        
+Parameters:
+  ServiceName:
+    Description: ServiceName name
+    Type: String
+    Default: "external-monitoring"
+  StageName:
+    Description: Stage name
+    Type: String
+    Default: "loc"
+    AllowedValues:
+      - loc
+      - dev
+      - stg
+      - prod
+  EngineVersion:
+    Type: String
+    AllowedValues:
+      - "8.0.mysql_aurora.3.03.0"
+      - "8.0.mysql_aurora.3.03.1"
+      - "8.0.mysql_aurora.3.03.2"
+      - "8.0.mysql_aurora.3.03.3"
+      - "8.0.mysql_aurora.3.04.0"
+      - "8.0.mysql_aurora.3.04.1"
+      - "8.0.mysql_aurora.3.04.2"
+      - "8.0.mysql_aurora.3.05.2"
+      - "8.0.mysql_aurora.3.06.0"
+    Default: "8.0.mysql_aurora.3.06.0"
+  MinCapacity:
+    Type: Number
+    Description: The minimum capacity for an Aurora Serverless DB cluster
+    Default: 0.5
+  MaxCapacity:
+    Type: Number
+    Description: The maximum capacity for an Aurora Serverless DB cluster
+    Default: 10
+
+Resources:
+
+  #----------------------------------------
+  # RDS DB Secret
+  # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-secretsmanager-secret.html
+  #----------------------------------------
+  RDSDBSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub "${ServiceName}-${StageName}-aurora-secret"
+      Description: This is a Secrets Manager secret for a Redshift cluster
+      GenerateSecretString:
+        SecretStringTemplate: '{"username": "admin"}'
+        GenerateStringKey: password
+        PasswordLength: 16
+        ExcludeCharacters: "\"'@/\\"
+      Tags:
+        - Key: Name
+          Value: !Sub "${ServiceName}-${StageName}-aurora-secret"
+        - Key: ServiceName
+          Value: !Ref ServiceName
+        - Key: StageName
+          Value: !Ref StageName
+
+  DBSubnetGroup: 
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupName: !Sub "${ServiceName}-${StageName}-subnet-group-aurora"
+      DBSubnetGroupDescription: "DB Subnet Group for Aurora Serverless"
+      SubnetIds: 
+        - Fn::ImportValue: !Sub "${ServiceName}-${StageName}-subnet-db-1"
+        - Fn::ImportValue: !Sub "${ServiceName}-${StageName}-subnet-db-2"
+      Tags: 
+        - Key: Name
+          Value: !Sub "${ServiceName}-${StageName}-subnet-group-aurora"
+        - Key: ServiceName
+          Value: !Ref ServiceName
+        - Key: StageName
+          Value: !Ref StageName
+
+  #----------------------------------------
+  # RDS DB Cluster
+  # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-rds-dbcluster.html#aws-resource-rds-dbcluster--examples--Creating_an_Amazon_Aurora_Serverless_v2_DB_cluster
+  #----------------------------------------
+  RDSDBCluster:
+    Type: AWS::RDS::DBCluster
+    Properties:
+      Engine: aurora-mysql
+      DBClusterIdentifier: !Sub "${ServiceName}-${StageName}-aurora-cluster"
+      EngineVersion: !Ref EngineVersion
+      MasterUsername: !Sub "{{resolve:secretsmanager:${RDSDBSecret}::username}}"
+      MasterUserPassword: !Sub "{{resolve:secretsmanager:${RDSDBSecret}::password}}"
+      ServerlessV2ScalingConfiguration:
+        MinCapacity: !Ref MinCapacity
+        MaxCapacity: !Ref MaxCapacity
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VpcSecurityGroupIds: 
+        - Fn::ImportValue: !Sub "${ServiceName}-${StageName}-sg-db"
+
+  DBSecretAttachment:
+    Type: AWS::SecretsManager::SecretTargetAttachment
+    Properties:
+      SecretId: !Ref RDSDBSecret
+      TargetId: !Ref RDSDBCluster
+      TargetType: AWS::RDS::DBCluster
+
+  #----------------------------------------
+  # RDS DB Instance
+  #----------------------------------------
+  RDSDBInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      Engine: aurora-mysql
+      DBInstanceClass: db.serverless
+      DBClusterIdentifier: !Ref RDSDBCluster
+      DBInstanceIdentifier: !Sub "${ServiceName}-${StageName}-aurora-instance"
+
+  #----------------------------------------
+  # IAM Role for RDS Proxy
+  #----------------------------------------
+  DBProxyRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: 
+               - rds.amazonaws.com
+            Action: 
+              - sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns:
+        - !Ref DBProxyPolicy
+      Tags:
+        - Key: Name
+          Value: !Sub "${ServiceName}-${StageName}-aurora-secret-role"      
+        - Key: ServiceName
+          Value: !Ref ServiceName
+        - Key: StageName
+          Value: !Ref StageName
+    DependsOn: DBProxyPolicy
+
+  DBProxyPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: "Allows reading secrets from AWS Secrets Manager."
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: 
+              - secretsmanager:GetSecretValue
+              - secretsmanager:DescribeSecret
+            Resource: !Ref DBSecretAttachment
+    DependsOn: DBSecretAttachment
+
+  #----------------------------------------
+  # RDS DB Proxy
+  #----------------------------------------
+  DBProxy:
+    Type: AWS::RDS::DBProxy
+    Properties:
+      DBProxyName: !Sub "${ServiceName}-${StageName}-aurora-proxy"
+      EngineFamily: MYSQL
+      RoleArn: !GetAtt DBProxyRole.Arn
+      Auth:
+        - AuthScheme: SECRETS
+          IAMAuth: DISABLED
+          SecretArn: !Ref DBSecretAttachment
+      VpcSubnetIds: 
+        - Fn::ImportValue: !Sub "${ServiceName}-${StageName}-subnet-private-1"
+        - Fn::ImportValue: !Sub "${ServiceName}-${StageName}-subnet-private-2"
+      VpcSecurityGroupIds: 
+        - Fn::ImportValue: !Sub ${ServiceName}-${StageName}-sg-db-proxy
+      Tags:
+      - Key: Name
+        Value: !Sub "${ServiceName}-${StageName}-aurora-proxy"
+      - Key: ServiceName
+        Value: !Ref ServiceName
+      - Key: StageName
+        Value: !Ref StageName
+    DependsOn:
+      - DBProxyRole
+      - DBSecretAttachment
+
+  #----------------------------------------
+  # RDS DB Proxy Target Group
+  #----------------------------------------
+  DBProxyTargetGroup: 
+   Type: AWS::RDS::DBProxyTargetGroup
+   Properties:
+      DBProxyName: !Ref DBProxy
+      TargetGroupName: default
+      DBClusterIdentifiers: 
+        - !Ref RDSDBCluster
+      ConnectionPoolConfigurationInfo:
+        MaxConnectionsPercent: 100
+        MaxIdleConnectionsPercent: 50
+        ConnectionBorrowTimeout: 120  
+   DependsOn: DBProxy

@@ -1,0 +1,397 @@
+Description:
+  VPC for external monitoring
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - 
+        Label:
+          default: Common parameters
+        Parameters:
+          - ServiceName
+          - StageName
+      - 
+        Label:
+          default: Parameters for VPC
+        Parameters:
+          - VpcCIDR
+          - PublicSubnet1CIDR
+          - PublicSubnet2CIDR
+          - PrivateSubnet1CIDR
+          - PrivateSubnet2CIDR
+          - DBSubnet1CIDR
+          - DBSubnet2CIDR
+        
+Parameters:
+  ServiceName:
+    Description: ServiceName name
+    Type: String
+    Default: "external-monitoring"
+  StageName:
+    Description: Stage name
+    Type: String
+    Default: "loc"
+    AllowedValues:
+      - loc
+      - dev
+      - stg
+      - prod
+
+  VpcCIDR:
+    Description: Please enter the IP range (CIDR notation) for this VPC
+    Type: String
+    Default: 10.192.0.0/16
+
+  PublicSubnet1CIDR:
+    Description: Please enter the IP range (CIDR notation) for the public subnet in the first Availability Zone
+    Type: String
+    Default: 10.192.10.0/24
+
+  PublicSubnet2CIDR:
+    Description: Please enter the IP range (CIDR notation) for the public subnet in the second Availability Zone
+    Type: String
+    Default: 10.192.11.0/24
+
+  PrivateSubnet1CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private subnet in the first Availability Zone
+    Type: String
+    Default: 10.192.20.0/24
+
+  PrivateSubnet2CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private subnet in the second Availability Zone
+    Type: String
+    Default: 10.192.21.0/24
+
+  DBSubnet1CIDR:
+    Description: Please enter the IP range (CIDR notation) for the db subnet in the first Availability Zone
+    Type: String
+    Default: 10.192.30.0/24
+
+  DBSubnet2CIDR:
+    Description: Please enter the IP range (CIDR notation) for the db subnet in the second Availability Zone
+    Type: String
+    Default: 10.192.31.0/24
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${StageName}-vpc
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${StageName}-igw
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      CidrBlock: !Ref PublicSubnet1CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${StageName}-subnet-public-1
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      CidrBlock: !Ref PublicSubnet2CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${StageName}-subnet-public-2
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${StageName}-public-routes
+
+  DefaultPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet1
+
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet2
+
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      CidrBlock: !Ref PrivateSubnet1CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${StageName}-subnet-private-1
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      CidrBlock: !Ref PrivateSubnet2CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${StageName}-subnet-private-2
+
+  PrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${StageName}-private-routetable-1
+
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      SubnetId: !Ref PrivateSubnet1
+
+  PrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${StageName}-private-routetable-2
+
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable2
+      SubnetId: !Ref PrivateSubnet2
+
+  DBSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      CidrBlock: !Ref DBSubnet1CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${StageName}-subnet-db-1
+
+  DBSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      CidrBlock: !Ref DBSubnet2CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${StageName}-subnet-db-2
+
+  DBRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${StageName}-db-routetable-1
+
+  DBSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref DBRouteTable1
+      SubnetId: !Ref DBSubnet1
+
+  DBRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${StageName}-db-routetable-2
+
+  DBSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref DBRouteTable2
+      SubnetId: !Ref DBSubnet2
+
+  APISecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${ServiceName}-${StageName}-sg-api
+      GroupDescription: Security group for API
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0      
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${StageName}-sg-api
+
+  ContainerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${ServiceName}-${StageName}-sg-container
+      GroupDescription: Security group for container
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8000
+          ToPort: 8000
+          SourceSecurityGroupId: !GetAtt APISecurityGroup.GroupId
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0      
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${StageName}-sg-container
+    DependsOn: APISecurityGroup
+
+  DBProxySecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${ServiceName}-${StageName}-sg-db-proxy
+      GroupDescription: Security group for DB Proxy
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          SourceSecurityGroupId: !GetAtt ContainerSecurityGroup.GroupId
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0      
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${StageName}-sg-db-proxy
+    DependsOn:
+      - ContainerSecurityGroup
+
+  DBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${ServiceName}-${StageName}-sg-db
+      GroupDescription: Security group for DB
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          SourceSecurityGroupId: !GetAtt ContainerSecurityGroup.GroupId
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          SourceSecurityGroupId: !GetAtt DBProxySecurityGroup.GroupId
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0      
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${StageName}-sg-db
+    DependsOn:
+      - ContainerSecurityGroup
+      - DBProxySecurityGroup
+
+Outputs:
+  VPC:
+    Description: A reference to the created VPC
+    Value: !Ref VPC
+    Export:
+      Name: !Sub ${ServiceName}-${StageName}-vpc
+
+  PublicSubnet1:
+    Description: A reference to the public subnet in the 1st Availability Zone
+    Value: !Ref PublicSubnet1
+    Export:
+      Name: !Sub ${ServiceName}-${StageName}-subnet-public-1
+
+  PublicSubnet2:
+    Description: A reference to the public subnet in the 2nd Availability Zone
+    Value: !Ref PublicSubnet2
+    Export:
+      Name: !Sub ${ServiceName}-${StageName}-subnet-public-2
+
+  PrivateSubnet1:
+    Description: A reference to the private subnet in the 1st Availability Zone
+    Value: !Ref PrivateSubnet1
+    Export:
+      Name: !Sub ${ServiceName}-${StageName}-subnet-private-1
+
+  PrivateSubnet2:
+    Description: A reference to the private subnet in the 2nd Availability Zone
+    Value: !Ref PrivateSubnet2
+    Export:
+      Name: !Sub ${ServiceName}-${StageName}-subnet-private-2
+
+  DBSubnet1:
+    Description: A reference to the db subnet in the 1st Availability Zone
+    Value: !Ref DBSubnet1
+    Export:
+      Name: !Sub ${ServiceName}-${StageName}-subnet-db-1
+
+  DBSubnet2:
+    Description: A reference to the db subnet in the 2nd Availability Zone
+    Value: !Ref DBSubnet2
+    Export:
+      Name: !Sub ${ServiceName}-${StageName}-subnet-db-2
+
+  APISecurityGroup:
+    Description: A reference to the security group for API
+    Value: !Ref APISecurityGroup
+    Export:
+      Name: !Sub ${ServiceName}-${StageName}-sg-api
+
+  ContainerSecurityGroup:
+    Description: A reference to the security group for container
+    Value: !Ref ContainerSecurityGroup
+    Export:
+      Name: !Sub ${ServiceName}-${StageName}-sg-container
+  
+  DBSecurityGroup:
+    Description: A reference to the security group for DB
+    Value: !Ref DBSecurityGroup
+    Export:
+      Name: !Sub ${ServiceName}-${StageName}-sg-db
+
+  DBProxySecurityGroup:
+    Description: A reference to the security group for DB Proxy
+    Value: !Ref DBProxySecurityGroup
+    Export:
+      Name: !Sub ${ServiceName}-${StageName}-sg-db-proxy
+  
