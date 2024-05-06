@@ -13,6 +13,9 @@ class SystemConfig:
     システム設定管理クラス
     """
 
+    # SSMクライアント
+    ssm_client = boto3.client("ssm", region_name="ap-northeast-1")
+
     @classmethod
     def get_sqlalchemy_db_url(cls) -> str:
         """
@@ -62,13 +65,11 @@ class SystemConfig:
         """
 
         secret_name = cls.get_ssm_parameter("external-monitoring-ssm-secret-name")
-        region_name = "ap-northeast-1"
         print(f"secret_name: {secret_name}")
-        print(f"region_name: {region_name}")
 
         # Secrets Manager クライアントを初期化
         session = boto3.session.Session()
-        client = session.client(service_name="secretsmanager", region_name=region_name)
+        client = session.client(service_name="secretsmanager", region_name="ap-northeast-1")
 
         # Secrets Managerから秘密情報を取得
         response = client.get_secret_value(SecretId=secret_name)
@@ -90,8 +91,7 @@ class SystemConfig:
             str: Parameter value
 
         """
-        ssm = boto3.client("ssm")
-        response = ssm.get_parameter(Name=param_name)
+        response = cls.ssm_client.get_parameter(Name=param_name)
         return response.get("Parameter", {}).get("Value", default)
 
 
