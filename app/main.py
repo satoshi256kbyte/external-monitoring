@@ -8,7 +8,7 @@ import httpx
 from fastapi import Depends, FastAPI
 from sqlalchemy.orm import Session
 
-from app import schemas
+from app.schemas.site import Site as SiteSchema
 from app.crud import external_monitoring as crud
 from app.database import get_db
 
@@ -29,8 +29,8 @@ async def healthcheck() -> dict[str, str]:
     return {"message": "OK"}
 
 
-@app.get("/sites/{id}", response_model=schemas.Site)
-async def read_item(id: int, db: Session = Depends(get_db)) -> schemas.Site:
+@app.get("/sites/{id}", response_model=SiteSchema)
+async def read_item(id: int, db: Session = Depends(get_db)) -> SiteSchema:
     """
     サイトの情報を取得
 
@@ -39,7 +39,7 @@ async def read_item(id: int, db: Session = Depends(get_db)) -> schemas.Site:
         db (Session, optional): DBセッション
 
     Returns:
-        schemas.Site: 取得されたサイトの情報。
+        SiteSchema: 取得されたサイトの情報。
     """
     return crud.get_site(db=db, id=id)
 
@@ -47,7 +47,7 @@ async def read_item(id: int, db: Session = Depends(get_db)) -> schemas.Site:
 @app.get("/sites/")
 async def read_items(
     skip: int = 0, limit: int = 10, db: Session = Depends(get_db)
-) -> list[schemas.Site]:
+) -> list[SiteSchema]:
     """
     サイトの一覧を取得
 
@@ -57,24 +57,24 @@ async def read_items(
         db (Session, optional): DBセッション
 
     Returns:
-        list[schemas.Site]: サイト情報一覧
+        list[SiteSchema]: サイト情報一覧
     """
     return crud.get_sites(db=db, skip=skip, limit=limit)
 
 
 @app.post("/sites/")
 async def create_item(
-    site: schemas.Site, db: Session = Depends(get_db)
-) -> schemas.Site:
+    site: SiteSchema, db: Session = Depends(get_db)
+) -> SiteSchema:
     """
     新しいサイトを追加します。
 
     Args:
-        site (schemas.Site): 追加するサイトの情報。
+        site (SiteSchema): 追加するサイトの情報。
         db (Session, optional): DBセッション
 
     Returns:
-        schemas.Site: 追加されたサイトの情報。
+        SiteSchema: 追加されたサイトの情報。
     """
     site = crud.add_site(db=db, site=site)
     db.commit()
@@ -82,7 +82,7 @@ async def create_item(
 
 
 @app.get("/sites-check/")
-async def check_sites(db: Session = Depends(get_db)) -> list[schemas.Site]:
+async def check_sites(db: Session = Depends(get_db)) -> list[SiteSchema]:
     """
     全サイトのステータスをチェックします。
 
@@ -92,10 +92,10 @@ async def check_sites(db: Session = Depends(get_db)) -> list[schemas.Site]:
         db (Session, optional): DBセッション
 
     Returns:
-        list[schemas.Site]: ステータスチェック後のサイト情報一覧
+        list[SiteSchema]: ステータスチェック後のサイト情報一覧
     """
 
-    sites: list[schemas.Site] = crud.get_sites(db=db)
+    sites: list[SiteSchema] = crud.get_sites(db=db)
     five_minutes_ago: datetime = datetime.now() - timedelta(minutes=5)
     count: int = 0
     for site in sites:
