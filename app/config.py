@@ -64,7 +64,7 @@ class SystemConfig:
             dict: Secret情報
         """
 
-        secret_name = os.environ("SECRET_NAME")
+        secret_name = os.environ.get("AWS_SECRET_NAME")
         print(f"secret_name: {secret_name}")
 
         # Secrets Manager クライアントを初期化

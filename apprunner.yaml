@@ -14,7 +14,7 @@ run:
     - pipenv install
   command: pipenv run uvicorn app.main:app --host 0.0.0.0 --port 8080
   secrets:
-    - name: SECRET_NAME
+    - name: AWS_SECRET_NAME
       value-from: "external-monitoring-ssm-secret-name"
     - name: DB_HOST
       value-from: "external-monitoring-ssm-db-host"
