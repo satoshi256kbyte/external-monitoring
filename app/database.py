@@ -8,6 +8,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.config import Config
 
+DeclarativeBase = declarative_base()
 
 def get_db():
     """
@@ -21,8 +22,6 @@ def get_db():
     print(SQLALCHEMY_DATABASE_URI)
     engine = create_engine(SQLALCHEMY_DATABASE_URI)
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-    DeclarativeBase = declarative_base()
     DeclarativeBase.metadata.create_all(bind=engine)
 
     db = SessionLocal()
