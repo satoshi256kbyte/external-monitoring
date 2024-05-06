@@ -5,10 +5,11 @@ runtime: python311
 build:
   commands:
     build:
-      - pip3 install pipenv
-      - pipenv requirements > requirements.txt
-      - pip3 install -r requirements.txt
-      - which uvicorn
-      
-run: 
-  command: ls -la; which uvicorn; uvicorn app.main:app --host 0.0.0.0 --port 8080
+      - echo "Build command..."
+run:
+  runtime-version: 3.11
+  pre-run:
+    - echo "Installing dependencies..."
+    - pip3 install pipenv
+    - pipenv install
+  command: pipenv run uvicorn app.main:app --host 0.0.0.0 --port 8080
