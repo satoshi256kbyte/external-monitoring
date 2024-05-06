@@ -25,8 +25,8 @@ class SystemConfig:
             str: DB接続URL
         """
 
-        db_host = os.environ.get("DB_HOST")
-        db_name = os.environ.get("DB_NAME")
+        db_host = os.environ.get("DB_HOST", "DB_HOST")
+        db_name = os.environ.get("DB_NAME", "DB_NAME")
         print(f"db_host: {db_host}")
         print(f"db_name: {db_name}")
         secrets = cls.get_secret()
@@ -64,7 +64,7 @@ class SystemConfig:
             dict: Secret情報
         """
 
-        secret_name = os.environ.get("AWS_SECRET_NAME")
+        secret_name = os.environ.get("AWS_SECRET_NAME", "AWS_SECRET_NAME")
         print(f"secret_name: {secret_name}")
 
         # Secrets Manager クライアントを初期化
