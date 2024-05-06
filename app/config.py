@@ -79,7 +79,7 @@ class SystemConfig:
         return None
 
     @classmethod
-    def get_ssm_parameter(cls, param_name: str, default: str) -> str:
+    def get_ssm_parameter(cls, param_name: str, default: str = "") -> str:
         """
         Get parameter from AWS SSM Parameter Store
 
