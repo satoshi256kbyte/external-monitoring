@@ -26,8 +26,8 @@ class SystemConfig:
         """
 
         secrets = cls.get_secret()
-        db_host = cls.get_ssm_parameter("external-monitoring-ssm-db-host")
-        db_name = cls.get_ssm_parameter("external-monitoring-ssm-db-name")
+        db_host = os.environ.get("DB_HOST")
+        db_name = os.environ.get("DB_NAME")
         print(f"db_username: {secrets.get('username')}")
         print(f"db_password: {secrets.get('password')}")
         print(f"db_host: {db_host}")
@@ -64,12 +64,14 @@ class SystemConfig:
             dict: Secret情報
         """
 
-        secret_name = cls.get_ssm_parameter("external-monitoring-ssm-secret-name")
+        secret_name = os.environ("SECRET_NAME")
         print(f"secret_name: {secret_name}")
 
         # Secrets Manager クライアントを初期化
         session = boto3.session.Session()
-        client = session.client(service_name="secretsmanager", region_name="ap-northeast-1")
+        client = session.client(
+            service_name="secretsmanager", region_name="ap-northeast-1"
+        )
 
         # Secrets Managerから秘密情報を取得
         response = client.get_secret_value(SecretId=secret_name)
@@ -79,20 +81,20 @@ class SystemConfig:
             return json.loads(secret)
         return None
 
-    @classmethod
-    def get_ssm_parameter(cls, param_name: str, default: str = "") -> str:
-        """
-        Get parameter from AWS SSM Parameter Store
+    # @classmethod
+    # def get_ssm_parameter(cls, param_name: str, default: str = "") -> str:
+    #     """
+    #     Get parameter from AWS SSM Parameter Store
 
-        Args:
-            param_name (str): Parameter name
-            default (str): Default value
-        Returns:
-            str: Parameter value
+    #     Args:
+    #         param_name (str): Parameter name
+    #         default (str): Default value
+    #     Returns:
+    #         str: Parameter value
 
-        """
-        response = cls.ssm_client.get_parameter(Name=param_name)
-        return response.get("Parameter", {}).get("Value", default)
+    #     """
+    #     response = cls.ssm_client.get_parameter(Name=param_name)
+    #     return response.get("Parameter", {}).get("Value", default)
 
 
 Config = SystemConfig
