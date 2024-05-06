@@ -35,3 +35,9 @@ class Site(BaseModel):
             ]
         }
     }
+
+    class Config:
+        # フィールドのカスタム設定
+        json_encoders = {
+            datetime: lambda v: v.isoformat()  # datetime 型のフィールドを ISO 8601 形式の文字列に変換
+        }
