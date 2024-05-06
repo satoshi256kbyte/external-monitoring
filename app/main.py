@@ -26,6 +26,7 @@ async def healthcheck() -> dict[str, str]:
     Returns:
         dict[str, str]: ヘルスチェックメッセージ。
     """
+    print("healthcheck")
     return {"message": "OK"}
 
 
