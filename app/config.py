@@ -72,12 +72,17 @@ class SystemConfig:
         client = session.client(
             service_name="secretsmanager", region_name="ap-northeast-1"
         )
+        print("create boto3 client")
 
         # Secrets Managerから秘密情報を取得
         response = client.get_secret_value(SecretId=secret_name)
 
+        print("get secret value")
+        print(response)
+
         if "SecretString" in response:
             secret = response.get("SecretString")
+            print(f"secret: {secret}")
             return json.loads(secret)
         return None
 
