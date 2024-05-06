@@ -25,13 +25,13 @@ class SystemConfig:
             str: DB接続URL
         """
 
-        secrets = cls.get_secret()
         db_host = os.environ.get("DB_HOST")
         db_name = os.environ.get("DB_NAME")
-        print(f"db_username: {secrets.get('username')}")
-        print(f"db_password: {secrets.get('password')}")
         print(f"db_host: {db_host}")
         print(f"db_name: {db_name}")
+        secrets = cls.get_secret()
+        print(f"db_username: {secrets.get('username')}")
+        print(f"db_password: {secrets.get('password')}")
 
         # データベース接続設定
         sqlalchemy_db_uri = (
