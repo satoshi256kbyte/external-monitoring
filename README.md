@@ -60,7 +60,7 @@ vi .env
 `uvicorn`コマンドでFastAPIアプリケーションを起動します。
 
 ```bash
- uvicorn app.main:app --reload --env-file .env
+ uvicorn app.main:app --reload --port 8080 --env-file .env
 ```
 
 ## AWSへのデプロイ
