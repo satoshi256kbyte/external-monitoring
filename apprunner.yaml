@@ -1,3 +1,5 @@
+# https://docs.aws.amazon.com/ja_jp/apprunner/latest/dg/config-file-examples.html
+# https://docs.aws.amazon.com/apprunner/latest/dg/service-source-code-python.html
 version: 1.0
 runtime: python311
 build:
