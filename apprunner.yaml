@@ -13,17 +13,10 @@ run:
     - pip3 install pipenv
     - pipenv install
   command: pipenv run uvicorn app.main:app --host 0.0.0.0 --port 8080
-  env:
+  secrets:
     - name: AWS_SECRET_NAME
-      value: "external-monitoring-loc-mysql-secret"
+      value-from: "external-monitoring-mysql-secret-name"
     - name: DB_HOST
-      value: "external-monitoring-loc-mysql-proxy.proxy-c9esme0lqkjt.ap-northeast-1.rds.amazonaws.com"
+      value-from: "external-monitoring-mysql-db-host"
     - name: DB_NAME
-      value: "external_monitoring"
-  # secrets:
-  #   - name: AWS_SECRET_NAME
-  #     value-from: "external-monitoring-mysql-secret-name"
-  #   - name: DB_HOST
-  #     value-from: "external-monitoring-mysql-db-host"
-  #   - name: DB_NAME
-  #     value-from: "external-monitoring-mysql-db-name"
+      value-from: "external-monitoring-mysql-db-name"
