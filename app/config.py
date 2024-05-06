@@ -87,20 +87,5 @@ class SystemConfig:
             return json.loads(secret)
         return None
 
-    # @classmethod
-    # def get_ssm_parameter(cls, param_name: str, default: str = "") -> str:
-    #     """
-    #     Get parameter from AWS SSM Parameter Store
-
-    #     Args:
-    #         param_name (str): Parameter name
-    #         default (str): Default value
-    #     Returns:
-    #         str: Parameter value
-
-    #     """
-    #     response = cls.ssm_client.get_parameter(Name=param_name)
-    #     return response.get("Parameter", {}).get("Value", default)
-
 
 Config = SystemConfig

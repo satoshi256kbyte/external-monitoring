@@ -234,7 +234,7 @@ Resources:
     Properties:
       Name: !Sub "${ServiceName}-mysql-db-name"
       Type: String
-      Value: !Ref ServiceName
+      Value: "external_monitoring"
 
   SSMDBUser:
     Type: AWS::SSM::Parameter
