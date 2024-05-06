@@ -65,31 +65,13 @@ vi .env
 
 ## AWSへのデプロイ
 
-### AWS ECR へのログイン
+AWS App Runnerでデプロイします。
 
-```bash
-aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin {AWSアカウントNo}.dkr.ecr.ap-northeast-1.amazonaws.com
-```
+### デプロイ方式にソースコードリポジトリを使用する場合
 
-### Docker イメージをビルド
+apprunner.yamlを作成しているのでそれを使用します。
 
-```bash
-docker build -t mimosa-{ステージ名}-ecr-crawler .
-```
-
-### イメージにタグを設定
-
-```bash
-docker tag mimosa-loc-ecr-crawler:latest {AWSアカウントNo}.dkr.ecr.ap-northeast-1.amazonaws.com/mimosa-{ステージ名}-ecr-crawler:latest
-```
-
-### イメージを AWS ECR にプッシュ
-
-```bash
-docker push {AWSアカウントNo}.dkr.ecr.ap-northeast-1.amazonaws.com/mimosa-{ステージ名}-ecr-crawler:latest
-```
-
-AWS App Runnerで、デプロイ方式にソースコードリポジトリを選択するものとして記述しています。
+AWS Connector for GitHubをインストールします。
 GitHub側に[AWS Connector for GitHub](https://github.com/apps/aws-connector-for-github)をインストールします。  
   
 `Configure`をクリックします。
@@ -108,6 +90,35 @@ GitHub側に[AWS Connector for GitHub](https://github.com/apps/aws-connector-for
 インストール後は、GitHubの設定画面にAWS Connector for GitHubが表示されます。
 
 ![GitHubの設定画面にAWS Connector for GitHubが表示される](images/AWS_Connector_for_GitHub_4.png)
+
+
+### デプロイ方式にAWS ECRを使用する場合  
+  
+Dockerfileでビルドでして、AWS ECRへのアップしてからApp Runnerサービスを作成します。
+
+#### AWS ECR へログイン
+
+```bash
+aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin {AWSアカウントNo}.dkr.ecr.ap-northeast-1.amazonaws.com
+```
+
+#### Docker イメージをビルド
+
+```bash
+docker build -t mimosa-{ステージ名}-ecr-crawler .
+```
+
+#### イメージにタグを設定
+
+```bash
+docker tag mimosa-loc-ecr-crawler:latest {AWSアカウントNo}.dkr.ecr.ap-northeast-1.amazonaws.com/mimosa-{ステージ名}-ecr-crawler:latest
+```
+
+#### イメージを AWS ECR にプッシュ
+
+```bash
+docker push {AWSアカウントNo}.dkr.ecr.ap-northeast-1.amazonaws.com/mimosa-{ステージ名}-ecr-crawler:latest
+```
 
 ## メモ
 
