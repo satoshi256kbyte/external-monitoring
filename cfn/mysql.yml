@@ -235,3 +235,17 @@ Resources:
       Name: !Sub "${ServiceName}-mysql-db-name"
       Type: String
       Value: !Ref ServiceName
+
+  SSMDBUser:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "${ServiceName}-mysql-db-user"
+      Type: String
+      Value: !Sub "{{resolve:secretsmanager:${RDSDBSecret}::username}}"
+
+  SSMDBPass:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "${ServiceName}-mysql-db-password"
+      Type: String
+      Value: !Sub "{{resolve:secretsmanager:${RDSDBSecret}::password}}"

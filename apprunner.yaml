@@ -20,3 +20,7 @@ run:
       value-from: "external-monitoring-mysql-db-host"
     - name: DB_NAME
       value-from: "external-monitoring-mysql-db-name"
+    - name: DB_USER
+      value-from: "external-monitoring-mysql-db-user"
+    - name: DB_PASS
+      value-from: "external-monitoring-mysql-db-password"

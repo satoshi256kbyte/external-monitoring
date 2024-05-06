@@ -8,9 +8,9 @@ import httpx
 from fastapi import Depends, FastAPI
 from sqlalchemy.orm import Session
 
-from app.schemas.site import Site as SiteSchema
 from app.crud import external_monitoring as crud
 from app.database import get_db
+from app.schemas.site import Site as SiteSchema
 
 app = FastAPI()
 
@@ -64,9 +64,7 @@ async def read_items(
 
 
 @app.post("/sites/")
-async def create_item(
-    site: SiteSchema, db: Session = Depends(get_db)
-) -> SiteSchema:
+async def create_item(site: SiteSchema, db: Session = Depends(get_db)) -> SiteSchema:
     """
     新しいサイトを追加します。
 

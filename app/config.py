@@ -27,20 +27,21 @@ class SystemConfig:
 
         db_host = os.environ.get("DB_HOST", "DB_HOST")
         db_name = os.environ.get("DB_NAME", "DB_NAME")
+        db_user = os.environ.get("DB_USER", "DB_USER")
+        db_pass = os.environ.get("DB_PASS", "DB_PASS")
         print(f"db_host: {db_host}")
         print(f"db_name: {db_name}")
-        secrets = cls.get_secret()
-        print(f"db_username: {secrets.get('username')}")
-        print(f"db_password: {secrets.get('password')}")
+        print(f"db_username: {db_user}")
+        print(f"db_password: {db_pass}")
 
         # データベース接続設定
         sqlalchemy_db_uri = (
             "mysql+pymysql://{user}:{password}@{host}/{dbname}?charset=utf8".format(
                 **{
-                    "user": secrets.get("username"),
-                    "password": secrets.get("password"),
-                    "host": os.environ.get("DB_HOST", "127.0.0.1"),
-                    "dbname": os.environ.get("DB_NAME", ""),
+                    "user": db_user,
+                    "password": db_pass,
+                    "host": db_host,
+                    "dbname": db_name,
                 }
             )
         )

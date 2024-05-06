@@ -10,6 +10,7 @@ from app.config import Config
 
 DeclarativeBase = declarative_base()
 
+
 def get_db():
     """
     DBセッションを取得します。
