@@ -203,8 +203,8 @@ Resources:
   # RDS DB Proxy Target Group
   #----------------------------------------
   DBProxyTargetGroup: 
-   Type: AWS::RDS::DBProxyTargetGroup
-   Properties:
+    Type: AWS::RDS::DBProxyTargetGroup
+    Properties:
       DBProxyName: !Ref DBProxy
       TargetGroupName: default
       DBInstanceIdentifiers:
@@ -213,4 +213,25 @@ Resources:
         MaxConnectionsPercent: 100
         MaxIdleConnectionsPercent: 50
         ConnectionBorrowTimeout: 120  
-   DependsOn: DBProxy
+    DependsOn: DBProxy
+
+  SSMSecretName:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "${ServiceName}-mysql-secret-name"
+      Type: String
+      Value: !Sub "${ServiceName}-${StageName}-mysql-secret"
+
+  SSMDBHost:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "${ServiceName}-mysql-db-host"
+      Type: String
+      Value: !GetAtt DBProxy.Endpoint
+
+  SSMDBName:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "${ServiceName}-mysql-db-name"
+      Type: String
+      Value: !Ref ServiceName

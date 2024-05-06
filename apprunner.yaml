@@ -15,8 +15,8 @@ run:
   command: pipenv run uvicorn app.main:app --host 0.0.0.0 --port 8080
   secrets:
     - name: AWS_SECRET_NAME
-      value-from: "external-monitoring-ssm-secret-name"
+      value-from: "external-monitoring-mysql-secret-name"
     - name: DB_HOST
-      value-from: "external-monitoring-ssm-db-host"
+      value-from: "external-monitoring-mysql-db-host"
     - name: DB_NAME
-      value-from: "external-monitoring-ssm-db-name"
+      value-from: "external-monitoring-mysql-db-name"
