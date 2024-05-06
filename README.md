@@ -20,7 +20,7 @@ App Runnerと本リポジトリを接続することでデプロイします。
 
 ### 依存ライブラリのインストール
 
-```
+```bash
 pipenv install --dev
 ```
 Pipfile.lock が作成されるので、Gitの管理対象としてCommitする必要有り。
@@ -29,7 +29,7 @@ Pipfile.lock が作成されるので、Gitの管理対象としてCommitする�
 tests/unit/test_handler.pyに定義されたテストの実行
 （以下コマンド実行前に$ pipenv shellで仮想環境に入る必要あり）
 
-```
+```bash
 pipenv run pytest -v -s
 ```
 
@@ -47,6 +47,67 @@ pipenv run format
 ```
 pipenv run lint
 ```
+
+### ローカル実行
+
+環境変数を`.env`ファイルに記述してください。
+
+```bash
+cp .env.sample .env
+vi .env
+```
+
+`uvicorn`コマンドでFastAPIアプリケーションを起動します。
+
+```bash
+ uvicorn app.main:app --reload --env-file .env
+```
+
+## AWSへのデプロイ
+
+### AWS ECR へのログイン
+
+```bash
+aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin {AWSアカウントNo}.dkr.ecr.ap-northeast-1.amazonaws.com
+```
+
+### Docker イメージをビルド
+
+```bash
+docker build -t mimosa-{ステージ名}-ecr-crawler .
+```
+
+### イメージにタグを設定
+
+```bash
+docker tag mimosa-loc-ecr-crawler:latest {AWSアカウントNo}.dkr.ecr.ap-northeast-1.amazonaws.com/mimosa-{ステージ名}-ecr-crawler:latest
+```
+
+### イメージを AWS ECR にプッシュ
+
+```bash
+docker push {AWSアカウントNo}.dkr.ecr.ap-northeast-1.amazonaws.com/mimosa-{ステージ名}-ecr-crawler:latest
+```
+
+AWS App Runnerで、デプロイ方式にソースコードリポジトリを選択するものとして記述しています。
+GitHub側に[AWS Connector for GitHub](https://github.com/apps/aws-connector-for-github)をインストールします。  
+  
+`Configure`をクリックします。
+
+![Configureをクリック](images/AWS_Connector_for_GitHub_1.png)
+
+アカウントを選択します。
+
+![アカウントを選択します](images/AWS_Connector_for_GitHub_2.png)
+
+デプロイ対象になり得るリポジトリを選択し、`Install`をクリックします。
+インストール後に画面上JSONエラーが出る時があるようです、それでもインストール自体はできるようなので設定画面で確認してください。
+
+![デプロイ対象になり得るリポジトリを選択](images/AWS_Connector_for_GitHub_3.png)  
+  
+インストール後は、GitHubの設定画面にAWS Connector for GitHubが表示されます。
+
+![GitHubの設定画面にAWS Connector for GitHubが表示される](images/AWS_Connector_for_GitHub_4.png)
 
 ## メモ
 

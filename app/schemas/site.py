@@ -2,7 +2,6 @@
 Webサイトモデルのスキーマ
 """
 
-import datetime
 from typing import Union
 
 from pydantic import BaseModel
@@ -20,8 +19,8 @@ class Site(BaseModel):
     url: str
     description: Union[str, None] = None
     status: Union[int, None] = None
-    created_at: datetime
-    updated_at: datetime
+    created_at: str
+    updated_at: str
 
     model_config = {
         "json_schema_extra": {

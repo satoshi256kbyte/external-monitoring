@@ -5,11 +5,12 @@ name = "pypi"
 
 [packages]
 fastapi = "*"
-uvicorn = {extras = ["standard"], version = "*"}
+uvicorn = {extras = ["standard"] }
 pydantic = "*"
 sqlalchemy = "*"
 boto3 = "*"
 httpx = "*"
+pymysql = "*"
 
 [dev-packages]
 black = "*"
@@ -19,6 +20,7 @@ flake8 = "*"
 pre-commit = "*"
 flake8-bandit = "*"
 editorconfig-checker = "*"
+python-dotenv = "*"
 
 [requires]
 python_version = "3.11"
@@ -26,6 +28,6 @@ python_version = "3.11"
 [scripts]
 unittest = "pytest --no-cov"
 coverage = "pytest --cov-report=term"
-lint = "bash -c 'flake8 src/app && ec'"
-format = "bash -c 'isort src/app tests && black src/app tests'"
-checkformat = "bash -c 'isort src/app tests --check && black src/app tests --check'"
+lint = "bash -c 'flake8 app && ec'"
+format = "bash -c 'isort app tests && black app tests'"
+checkformat = "bash -c 'isort app tests --check && black app tests --check'"

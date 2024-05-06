@@ -20,7 +20,9 @@ def get_secret():
     """
 
     secret_name = os.environ.get("AWS_SECRET_NAME")
-    region_name = os.environ.get("AWS_REGION", "us-west-2")
+    region_name = os.environ.get("AWS_REGION", "ap-northeast-1")
+    print(f"secret_name: {secret_name}")
+    print(f"region_name: {region_name}")
 
     # Secrets Manager クライアントを初期化
     session = boto3.session.Session()
@@ -49,12 +51,11 @@ SQLALCHEMY_DATABASE_URI = (
     )
 )
 
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URI, connect_args={"check_same_thread": False}
-)
+engine = create_engine(SQLALCHEMY_DATABASE_URI)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-Base = declarative_base()
+DeclarativeBase = declarative_base()
+DeclarativeBase.metadata.create_all(bind=engine)
 
 
 def get_db():

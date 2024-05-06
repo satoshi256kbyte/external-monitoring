@@ -127,7 +127,7 @@ Resources:
       ImageId: !Ref Ec2ImageId
       SecurityGroupIds:
         - Fn::ImportValue:
-            !Sub "${ServiceName}-${StageName}-sg-container"
+            !Sub "${ServiceName}-${StageName}-sg-vpc-connector"
       IamInstanceProfile: !Ref TerminalProfile
       BlockDeviceMappings:
         - DeviceName: /dev/xvda

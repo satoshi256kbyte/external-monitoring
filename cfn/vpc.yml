@@ -246,42 +246,23 @@ Resources:
       RouteTableId: !Ref DBRouteTable2
       SubnetId: !Ref DBSubnet2
 
-  APISecurityGroup:
+  VpcConnetctorSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: !Sub ${ServiceName}-${StageName}-sg-api
-      GroupDescription: Security group for API
-      VpcId: !Ref VPC
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          CidrIp: 0.0.0.0/0
-      SecurityGroupEgress:
-        - IpProtocol: -1
-          CidrIp: 0.0.0.0/0      
-      Tags:
-        - Key: Name
-          Value: !Sub ${ServiceName}-${StageName}-sg-api
-
-  ContainerSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupName: !Sub ${ServiceName}-${StageName}-sg-container
+      GroupName: !Sub ${ServiceName}-${StageName}-sg-vpc-connector
       GroupDescription: Security group for container
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 8000
-          ToPort: 8000
-          SourceSecurityGroupId: !GetAtt APISecurityGroup.GroupId
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0    
       SecurityGroupEgress:
         - IpProtocol: -1
           CidrIp: 0.0.0.0/0      
       Tags:
         - Key: Name
-          Value: !Sub ${ServiceName}-${StageName}-sg-container
-    DependsOn: APISecurityGroup
+          Value: !Sub ${ServiceName}-${StageName}-sg-vpc-connector
 
   DBProxySecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -293,7 +274,7 @@ Resources:
         - IpProtocol: tcp
           FromPort: 3306
           ToPort: 3306
-          SourceSecurityGroupId: !GetAtt ContainerSecurityGroup.GroupId
+          SourceSecurityGroupId: !GetAtt VpcConnetctorSecurityGroup.GroupId
       SecurityGroupEgress:
         - IpProtocol: -1
           CidrIp: 0.0.0.0/0      
@@ -301,7 +282,7 @@ Resources:
         - Key: Name
           Value: !Sub ${ServiceName}-${StageName}-sg-db-proxy
     DependsOn:
-      - ContainerSecurityGroup
+      - VpcConnetctorSecurityGroup
 
   DBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -313,7 +294,7 @@ Resources:
         - IpProtocol: tcp
           FromPort: 3306
           ToPort: 3306
-          SourceSecurityGroupId: !GetAtt ContainerSecurityGroup.GroupId
+          SourceSecurityGroupId: !GetAtt VpcConnetctorSecurityGroup.GroupId
         - IpProtocol: tcp
           FromPort: 3306
           ToPort: 3306
@@ -325,7 +306,7 @@ Resources:
         - Key: Name
           Value: !Sub ${ServiceName}-${StageName}-sg-db
     DependsOn:
-      - ContainerSecurityGroup
+      - VpcConnetctorSecurityGroup
       - DBProxySecurityGroup
 
 Outputs:
@@ -371,17 +352,11 @@ Outputs:
     Export:
       Name: !Sub ${ServiceName}-${StageName}-subnet-db-2
 
-  APISecurityGroup:
-    Description: A reference to the security group for API
-    Value: !Ref APISecurityGroup
-    Export:
-      Name: !Sub ${ServiceName}-${StageName}-sg-api
-
-  ContainerSecurityGroup:
+  VpcConnetctorSecurityGroup:
     Description: A reference to the security group for container
-    Value: !Ref ContainerSecurityGroup
+    Value: !Ref VpcConnetctorSecurityGroup
     Export:
-      Name: !Sub ${ServiceName}-${StageName}-sg-container
+      Name: !Sub ${ServiceName}-${StageName}-sg-vpc-connector
   
   DBSecurityGroup:
     Description: A reference to the security group for DB
