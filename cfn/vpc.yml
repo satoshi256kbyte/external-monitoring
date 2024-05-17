@@ -365,3 +365,20 @@ Outputs:
     Export:
       Name: !Sub ${ServiceName}-${StageName}-sg-db-proxy
   
+  VpcConnetctorSecurityGroupID:
+    Description: A reference to the security group for container
+    Value: !GetAtt VpcConnetctorSecurityGroup.GroupId
+    Export:
+      Name: !Sub ${ServiceName}-${StageName}-sg-id-vpc-connector
+  
+  DBSecurityGroupID:
+    Description: A reference to the security group for DB
+    Value: !GetAtt DBSecurityGroup.GroupId
+    Export:
+      Name: !Sub ${ServiceName}-${StageName}-sg-id-db
+
+  DBProxySecurityGroupID:
+    Description: A reference to the security group for DB Proxy
+    Value: !GetAtt DBProxySecurityGroup.GroupId
+    Export:
+      Name: !Sub ${ServiceName}-${StageName}-sg-id-db-proxy

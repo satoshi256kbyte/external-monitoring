@@ -128,6 +128,12 @@ CFnでRDSを作る時のEngineVersionの選択肢を確認するコマンド
 aws rds describe-db-engine-versions --engine aurora-mysql --query 'DBEngineVersions[].EngineVersion'
 ```
 
+CFnでRDSを作る時のDBInstanceClassの選択肢を確認するコマンド
+
+```bash
+aws rds describe-orderable-db-instance-options --engine aurora --query 'OrderableDBInstanceOptions[*].DBInstanceClass' --output text
+```
+
 AWS Secrets Managerからシークレットを取得するコマンド
 
 ```bash

@@ -1,0 +1,211 @@
+Description:
+  AWS Database Migration Service
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - 
+        Label:
+          default: Common parameters
+        Parameters:
+          - ServiceName
+          - StageName
+      -
+        Label:
+          default: DMS parameters
+        Parameters:
+          - InstanceClass
+        
+Parameters:
+  ServiceName:
+    Description: ServiceName name
+    Type: String
+    Default: "external-monitoring"
+  StageName:
+    Description: Stage name
+    Type: String
+    Default: "loc"
+    AllowedValues:
+      - loc
+      - dev
+      - stg
+      - prod
+  InstanceClass:
+    Type: String
+    AllowedValues:
+      - "dms.t3.micro"
+      - "dms.t3.small"
+      - "dms.t3.medium"
+      - "dms.t3.large"
+    Default: "dms.t3.micro"
+
+Resources:
+
+  #----------------------------------------
+  # DMS Replication Subnet Group
+  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-dms-replicationsubnetgroup.html
+  #----------------------------------------
+  ReplicationSubnetGroup: 
+    Type: AWS::DMS::ReplicationSubnetGroup
+    Properties: 
+      ReplicationSubnetGroupIdentifier: !Sub "${ServiceName}-${StageName}-subnet-group-dms-replication-instance"
+      ReplicationSubnetGroupDescription: description
+      SubnetIds: 
+        - Fn::ImportValue: !Sub "${ServiceName}-${StageName}-subnet-private-1"
+        - Fn::ImportValue: !Sub "${ServiceName}-${StageName}-subnet-private-2"
+      Tags: 
+        - Key: Name
+          Value: !Sub "${ServiceName}-${StageName}-ssubnet-group-dms-replication-instance"
+        - Key: ServiceName
+          Value: !Ref ServiceName
+        - Key: StageName
+          Value: !Ref StageName
+
+  #----------------------------------------
+  # DMS Replication Security Group
+  #----------------------------------------
+  ReplicationSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${ServiceName}-${StageName}-sg-db-dms-replication-instance"
+      GroupDescription: Security group for DB Proxy
+      VpcId:
+        Fn::ImportValue: !Sub "${ServiceName}-${StageName}-vpc"
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0      
+      Tags:
+        - Key: Name
+          Value: !Sub "${ServiceName}-${StageName}-sg-dms-replication-instance"
+
+  #----------------------------------------
+  # DMS Replication Instance
+  # https://docs.aws.amazon.com/ja_jp/AWSCloudFormation/latest/UserGuide/aws-resource-dms-replicationinstance.html
+  #----------------------------------------
+  ReplicationInstance: 
+    Type: AWS::DMS::ReplicationInstance
+    Properties:
+      ReplicationInstanceIdentifier: !Sub "${ServiceName}-${StageName}-dms-replication-instance"
+      ReplicationInstanceClass: !Ref InstanceClass
+      ReplicationSubnetGroupIdentifier: !Ref ReplicationSubnetGroup
+      VpcSecurityGroupIds:
+        - !Ref ReplicationSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub "${ServiceName}-${StageName}-dms-replication-instance"
+        - Key: ServiceName
+          Value: !Ref ServiceName
+        - Key: StageName
+          Value: !Ref StageName
+
+  #----------------------------------------
+  # IAM Role for DMS Endpoint
+  #----------------------------------------
+  DMSEndpointRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ServiceName}-${StageName}-dms-endpoint-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: 
+               - !Sub "dms.${AWS::Region}.amazonaws.com"
+            Action: 
+              - sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns:
+        - !Ref DMSEndpointPolicy
+      Tags:
+        - Key: Name
+          Value: !Sub "${ServiceName}-${StageName}-dms-endpoint-role"      
+        - Key: ServiceName
+          Value: !Ref ServiceName
+        - Key: StageName
+          Value: !Ref StageName
+    DependsOn: DMSEndpointPolicy
+
+  DMSEndpointPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub "${ServiceName}-${StageName}-dms-endpoint-policy"
+      Description: "Allows reading secrets from AWS Secrets Manager."
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: 
+              - secretsmanager:GetSecretValue
+              - secretsmanager:DescribeSecret
+            Resource: "*"
+  
+  #----------------------------------------
+  # IAM Role for DMS Task
+  #----------------------------------------
+  DMSTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ServiceName}-${StageName}-dms-task-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: 
+               - !Sub "dms.${AWS::Region}.amazonaws.com"
+            Action: 
+              - sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns:
+        - !Ref DMSTaskPolicy
+      Tags:
+        - Key: Name
+          Value: !Sub "${ServiceName}-${StageName}-dms-task-role"      
+        - Key: ServiceName
+          Value: !Ref ServiceName
+        - Key: StageName
+          Value: !Ref StageName
+    DependsOn: DMSTaskPolicy
+
+  DMSTaskPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub "${ServiceName}-${StageName}-dms-task-policy"
+      Description: "Allows full access to S3 bucket for DMS task."
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: 
+              - s3:*
+            Resource: 
+              - !Sub arn:aws:s3:::${ServiceName}-${StageName}-${AWS::AccountId}-dms-task-bucket
+              - !Sub arn:aws:s3:::${ServiceName}-${StageName}-${AWS::AccountId}-dms-task-bucket/*
+    DependsOn: DMSTaskBucket
+
+  #----------------------------------------
+  # IAM Role for DMS Task
+  #----------------------------------------
+  DMSTaskBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${ServiceName}-${StageName}-${AWS::AccountId}-dms-task-bucket"
+      VersioningConfiguration:
+        Status: "Suspended"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: "AES256"
+      Tags:
+        - Key: Name
+          Value: !Sub "${ServiceName}-${StageName}-${AWS::AccountId}-dms-task-bucket"
+        - Key: ServiceName
+          Value: !Ref ServiceName
+        - Key: StageName
+          Value: !Ref StageName
