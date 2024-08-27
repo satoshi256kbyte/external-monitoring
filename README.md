@@ -1,5 +1,7 @@
 # FastAPIとAmazon Aurora Serverless V2を使った外形監視アプリ
 
+他の人が追加した行
+
 ## 概要
 
 このアプリケーションは、FastAPIとAmazon Aurora Serverless V2を使った外形監視アプリです。
