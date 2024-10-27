@@ -28,3 +28,7 @@ jobs:
       if: steps.cache-dependencies.outputs.cache-hit != 'true'
       run: |
         pipenv install --dev --verbose
+    - name: Unit tests
+      run: |
+        pipenv shell
+        pipenv run pytest
