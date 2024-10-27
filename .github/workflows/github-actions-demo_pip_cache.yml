@@ -1,4 +1,4 @@
-name: Python build test
+name: Python build test pip cache
 on: [push]
 jobs:
   build:
