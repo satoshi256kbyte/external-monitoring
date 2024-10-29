@@ -17,7 +17,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install pipenv
     - name: Cache Dependencies
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       id: cache-dependencies
       with:
         path: ./.venv
@@ -26,6 +26,8 @@ jobs:
           ${{ runner.os }}-pipenv
     - name: Install dependencies
       if: steps.cache-dependencies.outputs.cache-hit != 'true'
+      env:
+        PIPENV_VENV_IN_PROJECT: "true"  # 仮想環境をプロジェクト内に作成
       run: |
         pipenv install --dev
     - name: Run Unit Tests
