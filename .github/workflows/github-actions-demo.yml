@@ -18,6 +18,10 @@ jobs:
     - name: Install dependencies
       run: |
         pipenv install --dev
+    - name: Verify Directory Structure
+      run: |
+        pwd
+        ls -la
     - name: Run Unit Tests
       run: |
         pipenv run pytest ${{ github.workspace }}

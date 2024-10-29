@@ -27,7 +27,11 @@ jobs:
     - name: Install dependencies
       if: steps.cache-dependencies.outputs.cache-hit != 'true'
       run: |
-        pipenv install --dev --verbose
+        pipenv install --dev
+    - name: Verify Directory Structure
+      run: |
+        pwd
+        ls -la
     - name: Run Unit Tests
       run: |
         ls -la
