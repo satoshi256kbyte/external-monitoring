@@ -1,2 +1,2 @@
-def test_sample():
-    pass
+def test_example():
+    assert True
