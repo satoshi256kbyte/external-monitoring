@@ -21,4 +21,4 @@ jobs:
         pipenv install --dev --verbose
     - name: Run Unit Tests
       run: |
-        pipenv run pytest
+        pipenv run unittest
