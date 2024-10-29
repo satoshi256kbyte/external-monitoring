@@ -12,10 +12,9 @@ jobs:
         python-version: '3.11.6'
     - name: Check Python version
       run: python --version
-    - name: Install dependencies
+    - name: Install pipenv
       run: |
         pip install pipenv
-        pipenv install --dev
     - name: Install dependencies
       run: |
         pipenv install --dev --verbose
