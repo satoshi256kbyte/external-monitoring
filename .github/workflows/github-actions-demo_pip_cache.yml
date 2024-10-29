@@ -22,8 +22,6 @@ jobs:
       with:
         path: ./.venv
         key: ${{ runner.os }}-pip-${{ hashFiles('**/Pipfile.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-pipenv
     - name: Install dependencies
       if: steps.cache-dependencies.outputs.cache-hit != 'true'
       env:
