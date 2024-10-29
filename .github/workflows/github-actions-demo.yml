@@ -17,10 +17,7 @@ jobs:
         pip install pipenv
     - name: Install dependencies
       run: |
-        pipenv install --dev --verbose
-    - name: Collect Tests
-      run: |
-        pipenv run pytest --collect-only -v
+        pipenv install --dev
     - name: Run Unit Tests
       run: |
-        pipenv run pytest -v -s tests/
+        pipenv run pytest ${{ github.workspace }}
